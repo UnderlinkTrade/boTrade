@@ -75,7 +75,7 @@ with st.form("retiro_jugador"):
     preferencia = st.selectbox("¿Cómo prefiere recibir?", ["Efectivo", "Transferencia"])
     submit_retiro = st.form_submit_button("Registrar retiro")
     if submit_retiro:
-        from logic import registrar_retiro  # asegurar que esté importado
+        
         registrar_retiro(estado, jugador_retiro, fichas_salida, preferencia)
         guardar_sesion(ruta_sesion, estado)
         st.success(f"{jugador_retiro} retirado con {fichas_salida} fichas.")
