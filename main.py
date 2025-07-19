@@ -67,6 +67,18 @@ for compra in compras_pendientes:
 st.header("📊 Estado de la partida")
 st.table(calcular_balance(estado))
 
+st.header("🏁 Retiro de jugadores")
+with st.form("retiro_jugador"):
+    jugador_retiro = st.selectbox("Jugador que se retira", [j["nombre"] for j in estado["jugadores"]])
+    fichas_salida = st.number_input("Cantidad de fichas con las que se retira", min_value=0, step=1000)
+    preferencia = st.selectbox("¿Cómo prefiere recibir?", ["Efectivo", "Transferencia"])
+    submit_retiro = st.form_submit_button("Registrar retiro")
+    if submit_retiro:
+        from logic import registrar_retiro  # asegurar que esté importado
+        registrar_retiro(estado, jugador_retiro, fichas_salida, preferencia)
+        guardar_sesion(ruta_sesion, estado)
+        st.success(f"{jugador_retiro} retirado con {fichas_salida} fichas.")
+
 # E. Cierre de sesión
 st.header("🔒 Cierre de sesión")
 if not estado["cerrado"]:
