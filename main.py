@@ -68,6 +68,23 @@ for compra in compras_pendientes:
 st.header("📊 Estado de la partida")
 st.table(calcular_balance(estado))
 
+
+# 📈 Resultado final por jugador (post retiro)
+st.header("📈 Resultados de retiro")
+resultado_final = calcular_resultado_final(estado)
+st.table([
+    {
+        "Jugador": j["Jugador"],
+        "Fichas compradas": j["total"],
+        "Fichas salida": j["fichas_salida"],
+        "Preferencia": j["preferencia"],
+        "Resultado neto": j["resultado"],
+        "Liquidación": j["deuda"]
+    }
+    for j in resultado_final
+])
+
+
 st.header("🏁 Retiro de jugadores")
 with st.form("retiro_jugador"):
     jugador_retiro = st.selectbox("Jugador que se retira", [j["nombre"] for j in estado["jugadores"]])
@@ -75,21 +92,47 @@ with st.form("retiro_jugador"):
     preferencia = st.selectbox("¿Cómo prefiere recibir?", ["Efectivo", "Transferencia"])
     submit_retiro = st.form_submit_button("Registrar retiro")
     if submit_retiro:
-        
+
         registrar_retiro(estado, jugador_retiro, fichas_salida, preferencia)
         guardar_sesion(ruta_sesion, estado)
         st.success(f"{jugador_retiro} retirado con {fichas_salida} fichas.")
 
 # E. Cierre de sesión
+# E. Cierre de sesión
 st.header("🔒 Cierre de sesión")
+
 if not estado["cerrado"]:
-    if st.button("Cerrar sesión definitivamente"):
-        cerrar_sesion(estado)
-        guardar_sesion(ruta_sesion, estado)
-        st.success("Sesión cerrada. Ya no se puede modificar.")
+    jugadores_sin_retiro = [
+        j["nombre"]
+        for j in estado["jugadores"]
+        if j["nombre"] not in [r["jugador"] for r in estado.get("retiros", [])]
+    ]
+
+    if jugadores_sin_retiro:
+        st.error(f"❌ No puedes cerrar la sesión. Faltan retiros de: {', '.join(jugadores_sin_retiro)}")
+    else:
+        if "confirmar_cierre" not in st.session_state:
+            st.session_state["confirmar_cierre"] = False
+
+        if not st.session_state["confirmar_cierre"]:
+            if st.button("Cerrar sesión definitivamente"):
+                st.session_state["confirmar_cierre"] = True
+                st.warning("¿Estás seguro que deseas cerrar la sesión? Haz clic nuevamente para confirmar.")
+        else:
+            if st.button("Confirmar cierre"):
+                cerrar_sesion(estado)
+                guardar_sesion(ruta_sesion, estado)
+                resumen_final = generar_cuadratura_final(estado)
+                st.success("✅ Sesión cerrada. Se calcularon los pagos correspondientes.")
+                st.code(resumen_final, language="text")
+                st.download_button("📄 Descargar resumen final",
+                                   data=resumen_final,
+                                   file_name=f"resumen_{sesion_actual}.txt")
+
 else:
     st.warning("La sesión está cerrada.")
     st.download_button("📄 Descargar resumen final",
                        data=generar_cuadratura_final(estado),
                        file_name=f"resumen_{sesion_actual}.txt")
+
 
