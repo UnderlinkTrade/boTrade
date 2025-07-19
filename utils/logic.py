@@ -75,3 +75,28 @@ def generar_cuadratura_final(estado):
 
     buffer.write("\nGracias por jugar 🤝\n")
     return buffer.getvalue()
+
+def registrar_retiro(estado, jugador, fichas_salida, preferencia):
+    if "retiros" not in estado:
+        estado["retiros"] = []
+    estado["retiros"].append({
+        "jugador": jugador,
+        "fichas_salida": fichas_salida,
+        "preferencia": preferencia,
+        "timestamp": datetime.now().isoformat()
+    })
+
+def calcular_resultado_final(estado):
+    balance = calcular_balance(estado)
+    salidas = {r["jugador"]: r for r in estado.get("retiros", [])}
+    for jugador in balance:
+        nombre = jugador["Jugador"]
+        fichas_salida = salidas.get(nombre, {}).get("fichas_salida")
+        if fichas_salida is not None:
+            jugador["fichas_salida"] = fichas_salida
+            jugador["resultado"] = fichas_salida - jugador["total"]
+        else:
+            jugador["fichas_salida"] = "N/A"
+            jugador["resultado"] = "N/A"
+    return balance
+
