@@ -48,33 +48,24 @@ def calcular_balance(estado):
 def cerrar_sesion(estado):
     estado["cerrado"] = True
     estado["cerrado_ts"] = datetime.now().isoformat()
-
+    
 def generar_cuadratura_final(estado):
-    buffer = StringIO()
-    buffer.write("Resumen de caja - Partida de Póker\n")
-    buffer.write(f"Fecha: {estado.get('cerrado_ts', 'N/A')}\n\n")
+    resumen = []
+    resumen.append("🃏 RESUMEN FINAL DE LA PARTIDA\n")
+    resumen.append(f"Fecha de cierre: {datetime.now().strftime('%Y-%m-%d %H:%M:%S')}\n")
+    resumen.append("Jugadores:\n")
 
-    balance = calcular_balance(estado)
-    total_efectivo = sum(x["efectivo"] for x in balance)
-    total_transferencia = sum(x["transferencia"] for x in balance)
-    total = total_efectivo + total_transferencia
+    resumen.append("Nombre        | Comprado | Salida | Resultado | Liquidación")
+    resumen.append("--------------|----------|--------|-----------|------------------------------")
 
-    buffer.write(f"Total en efectivo recaudado: ${total_efectivo:,} CLP\n")
-    buffer.write(f"Total en fichas (valor jugado): ${total:,} CLP\n\n")
+    resultados = calcular_resultado_final(estado)
 
-    buffer.write("Detalle por jugador:\n")
-    for b in balance:
-        buffer.write(f"{b['Jugador']}: Efectivo ${b['efectivo']:,}, "
-                     f"Transferencia ${b['transferencia']:,}, Total ${b['total']:,}\n")
+    for j in resultados:
+        resumen.append(f"{j['Jugador']:<14} ${j['total']:>7,}   {str(j['fichas_salida']):>6}   {str(j['resultado']):>9}   {j['deuda']}")
 
-    buffer.write("\nCompras validadas:\n")
-    for c in estado["compras"]:
-        if c["validado"]:
-            buffer.write(f"{c['jugador']} → ${c['monto']:,} vía {c['metodo']} "
-                         f"(validado por {c['validador']})\n")
+    resumen.append("\nGracias por jugar. ¡Nos vemos en la próxima! 🤑")
 
-    buffer.write("\nGracias por jugar 🤝\n")
-    return buffer.getvalue()
+    return "\n".join(resumen)
 
 def registrar_retiro(estado, jugador, fichas_salida, preferencia):
     if "retiros" not in estado:
@@ -89,14 +80,33 @@ def registrar_retiro(estado, jugador, fichas_salida, preferencia):
 def calcular_resultado_final(estado):
     balance = calcular_balance(estado)
     salidas = {r["jugador"]: r for r in estado.get("retiros", [])}
+
     for jugador in balance:
         nombre = jugador["Jugador"]
-        fichas_salida = salidas.get(nombre, {}).get("fichas_salida")
-        if fichas_salida is not None:
+        retiro = salidas.get(nombre)
+
+        if retiro:
+            fichas_salida = retiro.get("fichas_salida", 0)
+            preferencia = retiro.get("preferencia", "No informado")
+            fichas_compradas = jugador["total"]
+            resultado = fichas_salida - fichas_compradas
+
             jugador["fichas_salida"] = fichas_salida
-            jugador["resultado"] = fichas_salida - jugador["total"]
+            jugador["preferencia"] = preferencia
+            jugador["resultado"] = resultado
+
+            if resultado > 0:
+                jugador["deuda"] = f"Debe recibir ${resultado:,} vía {preferencia}"
+            elif resultado < 0:
+                jugador["deuda"] = f"Debe devolver ${-resultado:,}"
+            else:
+                jugador["deuda"] = "Saldo exacto"
         else:
             jugador["fichas_salida"] = "N/A"
+            jugador["preferencia"] = "N/A"
             jugador["resultado"] = "N/A"
+            jugador["deuda"] = "No se ha retirado"
+
     return balance
+
 
