@@ -7,7 +7,8 @@ import json
 from utils.storage import guardar_sesion, cargar_sesion
 from utils.logic import (
     agregar_jugador, registrar_compra, validar_compra,
-    calcular_balance, cerrar_sesion, generar_cuadratura_final
+    calcular_balance, cerrar_sesion, generar_cuadratura_final,
+    registrar_retiro, calcular_resultado_final
 )
 
 # Configuración inicial
