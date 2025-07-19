@@ -76,10 +76,10 @@ st.table([
     {
         "Jugador": j["Jugador"],
         "Fichas compradas": j["total"],
-        "Fichas salida": j["fichas_salida"],
-        "Preferencia": j["preferencia"],
-        "Resultado neto": j["resultado"],
-        "Liquidación": j["deuda"]
+        "Fichas salida": j.get("fichas_salida", "N/A"),
+        "Preferencia": j.get("preferencia", "No declarado"),
+        "Resultado neto": j.get("resultado", "N/A"),
+        "Liquidación": j.get("deuda", "N/A")
     }
     for j in resultado_final
 ])
