@@ -98,7 +98,7 @@ with st.form("retiro_jugador"):
         st.success(f"{jugador_retiro} retirado con {fichas_salida} fichas.")
 
 # E. Cierre de sesión
-# E. Cierre de sesión
+## E. Cierre de sesión
 st.header("🔒 Cierre de sesión")
 
 if not estado["cerrado"]:
@@ -117,20 +117,29 @@ if not estado["cerrado"]:
         if "confirmar_cierre" not in st.session_state:
             st.session_state["confirmar_cierre"] = False
 
-        if not st.session_state["confirmar_cierre"]:
-            if st.button("Cerrar sesión definitivamente"):
-                st.session_state["confirmar_cierre"] = True
-                st.warning("⚠️ ¿Estás seguro que deseas cerrar la sesión? Haz clic nuevamente para confirmar.")
-        else:
-            if st.button("Confirmar cierre"):
-                cerrar_sesion(estado)
-                guardar_sesion(ruta_sesion, estado)
-                resumen_final = generar_cuadratura_final(estado)
-                st.success("✅ Sesión cerrada. Se calcularon los pagos correspondientes.")
-                st.code(resumen_final, language="text")
-                st.download_button("📄 Descargar resumen final",
-                                   data=resumen_final,
-                                   file_name=f"resumen_{sesion_actual}.txt")
+        col1, col2 = st.columns([1, 3])
+        with col1:
+            cerrar_click = st.button("Cerrar sesión definitivamente")
+        with col2:
+            cancelar_click = st.button("Cancelar")
+
+        if cerrar_click and not st.session_state["confirmar_cierre"]:
+            st.session_state["confirmar_cierre"] = True
+            st.warning("⚠️ ¿Estás seguro que deseas cerrar la sesión? Haz clic nuevamente para confirmar.")
+
+        elif cerrar_click and st.session_state["confirmar_cierre"]:
+            cerrar_sesion(estado)
+            guardar_sesion(ruta_sesion, estado)
+            resumen_final = generar_cuadratura_final(estado)
+            st.success("✅ Sesión cerrada. Se calcularon los pagos correspondientes.")
+            st.code(resumen_final, language="text")
+            st.download_button("📄 Descargar resumen final",
+                               data=resumen_final,
+                               file_name=f"resumen_{sesion_actual}.txt")
+            st.session_state["confirmar_cierre"] = False
+
+        if cancelar_click:
+            st.session_state["confirmar_cierre"] = False
 else:
     st.warning("La sesión está cerrada.")
     st.download_button("📄 Descargar resumen final",
