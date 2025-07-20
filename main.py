@@ -102,14 +102,17 @@ with st.form("retiro_jugador"):
 st.header("🔒 Cierre de sesión")
 
 if not estado["cerrado"]:
-    jugadores_sin_retiro = [
+    jugadores_sin_retiro_valido = [
         j["nombre"]
         for j in estado["jugadores"]
-        if j["nombre"] not in [r["jugador"] for r in estado.get("retiros", [])]
+        if not any(
+            r["jugador"] == j["nombre"] and r.get("fichas_salida", 0) > 0
+            for r in estado.get("retiros", [])
+        )
     ]
 
-    if jugadores_sin_retiro:
-        st.error(f"❌ No puedes cerrar la sesión. Faltan retiros de: {', '.join(jugadores_sin_retiro)}")
+    if jugadores_sin_retiro_valido:
+        st.error(f"❌ No puedes cerrar la sesión. Faltan fichas finales de: {', '.join(jugadores_sin_retiro_valido)}")
     else:
         if "confirmar_cierre" not in st.session_state:
             st.session_state["confirmar_cierre"] = False
@@ -117,7 +120,7 @@ if not estado["cerrado"]:
         if not st.session_state["confirmar_cierre"]:
             if st.button("Cerrar sesión definitivamente"):
                 st.session_state["confirmar_cierre"] = True
-                st.warning("¿Estás seguro que deseas cerrar la sesión? Haz clic nuevamente para confirmar.")
+                st.warning("⚠️ ¿Estás seguro que deseas cerrar la sesión? Haz clic nuevamente para confirmar.")
         else:
             if st.button("Confirmar cierre"):
                 cerrar_sesion(estado)
@@ -128,11 +131,8 @@ if not estado["cerrado"]:
                 st.download_button("📄 Descargar resumen final",
                                    data=resumen_final,
                                    file_name=f"resumen_{sesion_actual}.txt")
-
 else:
     st.warning("La sesión está cerrada.")
     st.download_button("📄 Descargar resumen final",
                        data=generar_cuadratura_final(estado),
                        file_name=f"resumen_{sesion_actual}.txt")
-
-
