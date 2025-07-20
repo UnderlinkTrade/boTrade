@@ -10,22 +10,26 @@ def agregar_jugador(estado, nombre, anfitrion=False):
         "anfitrion": anfitrion
     })
 
-def registrar_compra(estado, jugador, monto, metodo):
+def registrar_compra(estado, jugador, monto, metodo, user_id):
     estado["compras"].append({
         "id": str(uuid.uuid4()),
         "jugador": jugador,
         "monto": monto,
         "metodo": metodo,
+        "user_id": user_id,
         "validado": False,
         "validador": None,
         "timestamp": datetime.now().isoformat()
     })
 
-def validar_compra(estado, id_compra, validador):
+def validar_compra(estado, id_compra, validador, validador_id):
     for compra in estado["compras"]:
         if compra["id"] == id_compra and not compra["validado"]:
+            if compra.get("user_id") == validador_id:
+                raise ValueError("No puedes validar tu propia compra.")
             compra["validado"] = True
             compra["validador"] = validador
+            compra["validador_id"] = validador_id
             compra["validado_ts"] = datetime.now().isoformat()
             break
 
@@ -109,4 +113,11 @@ def calcular_resultado_final(estado):
 
     return balance
 
+def eliminar_jugador(estado, nombre_jugador):
+    # Elimina al jugador de la lista
+    estado["jugadores"] = [j for j in estado["jugadores"] if j["nombre"] != nombre_jugador]
+    # Elimina cualquier compra asociada
+    estado["compras"] = [c for c in estado["compras"] if c["jugador"] != nombre_jugador]
+    # Elimina cualquier retiro asociado
+    estado["retiros"] = [r for r in estado.get("retiros", []) if r["jugador"] != nombre_jugador]
 
